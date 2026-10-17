@@ -59,7 +59,7 @@ SP_TEST_PYTHON=/path/to/python3 sh test.sh
 | `test-catalog.sh` | Release identity, model compatibility, stock-only policy |
 | `test-managed.sh` | Private backup/receipt management and scaler CLI model guards |
 | `test-ui.sh` | Offscreen light/dark layout, current-step behavior, log display/scrolling |
-| `test-usb.sh` | VIA SPI simulation, USB CLI orchestration, native importer, model profiles |
+| `test-usb.sh` | Native IOKit access policy with a fake USB vtable, VIA SPI simulation, USB CLI orchestration, native importer, model profiles |
 | `test.sh` | Above checks plus stock image corruption and scaler protocol simulations |
 
 C protocol tests use AddressSanitizer and UndefinedBehaviorSanitizer. CLI tests stub the hardware transport and never link/use the real macOS USB open path. Exact counts and scope are in [VALIDATION.md](VALIDATION.md).

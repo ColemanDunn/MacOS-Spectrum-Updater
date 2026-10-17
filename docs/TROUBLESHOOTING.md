@@ -36,6 +36,10 @@ If the installed scaler image is an unrecognized older factory release, the engi
 
 A chip may have a valid ID but no supported geometry/configuration profile. The operation stops before erase when this is detected. Document the reported ID and exact model; do not substitute a guessed flash size. D03 C22017/C22018 profiles already incorporate the earlier chip-size correction.
 
+Build 17 recognizes scaler EF4018 for read-only model checks and backups, allowing a USB hub/PD update to continue to the existing compatibility checks. It still refuses scaler writes on that chip. Earlier builds stop at EF4018 even when only USB-C/PD firmware was selected. After a stopped maintenance attempt, power-cycle the monitor before trying the corrected build.
+
+Build 18 fixes a separate zero-filled USB shared-SPI ID response seen on VL822Q7. The old `C8/9F` transaction returned `00000000`; the corrected single-command-byte `C1/9F` transaction returned the valid `EF301200` response over the same USB-C connection. Zero or FF responses are rejected as invalid identification rather than accepted as a chip profile. Keep the log if this persists on the corrected build.
+
 ## Paired hub/controller/layout could not be validated
 
 The hub/PD engine requires the selected billboard's direct compatible hub ancestor, VL822Q7 silicon, supported SPI, consistent headers, and valid PD identity/checksum. An unrelated hub, OS access denial, ambiguous legacy PD layout, SPI protection, or unsupported hardware causes rejection.
@@ -43,6 +47,8 @@ The hub/PD engine requires the selected billboard's direct compatible hub ancest
 These routes still need physical validation. Passing offline tests is not a reason to force them through an unknown controller or layout.
 
 ## IOKit USB error or short transfer
+
+Build 16 handles `0xe00002c5` (`kIOReturnExclusiveAccess`) on the directly paired `2109:2822` hub through IOKit's shared vendor-control path. It leaves the macOS hub driver attached. Earlier builds stop at the exclusive-open attempt. This fallback does not apply to the scaler bridge or to other permission/disconnection errors.
 
 The operation can stop when macOS denies access, the device disconnects, a command fails, or the returned length differs from what the protocol requires. Inspect the surrounding log to determine whether writing had begun.
 

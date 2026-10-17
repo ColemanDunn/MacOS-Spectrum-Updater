@@ -18,7 +18,10 @@ static void sleep_ms(void *c,uint32_t ms){((fake*)c)->time+=ms;}
 static ssize_t control(void *c,uint8_t type,uint8_t cmd,uint16_t value,uint16_t index,void *d,uint16_t n,uint32_t timeout){
  fake *f=c;CHECK(timeout==3000);f->calls++;if(f->calls==f->fail_at)return -1;if(f->calls==f->short_at)return n? n-1:-1;
  uint32_t a=((uint32_t)(value&0xff00)<<8)|((index&0xff)<<8)|(index>>8);
- if(type==0xc0&&cmd==0xc8){CHECK(value==0x9f&&index==0&&n==4);memcpy(d,f->jedec,4);return n;}
+ /* Measured VL822Q7 transcript: C1/9F returns EF301200; the old C8/9F
+    transaction clocks past the ID and returns 00000000. */
+ if(type==0xc0&&cmd==0xc8){CHECK(value==0x9f&&index==0&&n==4);memset(d,0,4);return n;}
+ if(type==0xc0&&cmd==0xc1&&value==0x9f){CHECK(index==0&&n==4);memcpy(d,f->jedec,4);return n;}
  if(type==0xc0&&cmd==0xc1){CHECK(value==5&&n==1);*(uint8_t*)d=(f->wel?2:0)|(f->protected?0x1c:0)|(f->busy?1:0);return 1;}
  if(type==0xc0&&cmd==0xc4){CHECK((value&255)==3&&n<=32&&a+n<=CAP);memcpy(d,f->data+a,n);return n;}
  if(type==0x40&&cmd==0xd1){CHECK(value==6&&n==0);f->wel=true;return 0;}
@@ -46,6 +49,12 @@ int main(int argc,char **argv){CHECK(argc==4);char err[256];uint8_t *hub,*pd,*ol
  /* Every setup request can fail or return short; no erase is ever issued. */
  for(unsigned mode=0;mode<2;mode++)for(unsigned step=1;step<=16;step++){init(f,saved);if(mode)f->short_at=step;else f->fail_at=step;s=session(f);int rc=sp_vli_begin(&s);CHECK(rc!=0);CHECK(f->erases==0);sp_vli_finish(&s);}
  init(f,saved);f->jedec[2]=0x18;s=session(f);CHECK(sp_vli_begin(&s));CHECK(f->erases==0);sp_vli_finish(&s);
+ for(unsigned invalid=0;invalid<2;invalid++){
+  init(f,saved);memset(f->jedec,invalid?0xff:0,4);s=session(f);
+  CHECK(sp_vli_begin(&s));CHECK(!s.ready&&!f->erases&&!f->writes);
+  CHECK(strstr(s.error,"did not return a valid JEDEC ID"));CHECK(!sp_vli_finish(&s));
+  CHECK(f->regs[0xf8a2]==0xff&&f->regs[0xf832]==0xfd&&f->regs[0xf920]==0xab&&f->regs[0xf836]==0x40);
+ }
  init(f,saved);f->regs[0xf651]=2;s=session(f);CHECK(sp_vli_begin(&s));CHECK(f->erases==0);
  init(f,saved);f->protected=true;s=session(f);CHECK(sp_vli_begin(&s));CHECK(f->erases==0);sp_vli_finish(&s);
  init(f,saved);f->busy=true;s=session(f);CHECK(sp_vli_begin(&s));CHECK(f->time<=10000);sp_vli_finish(&s);

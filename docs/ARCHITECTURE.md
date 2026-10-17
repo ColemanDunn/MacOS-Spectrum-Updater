@@ -35,13 +35,17 @@ The catalog isn't a generic “any BIN” input. Target authorization and instal
 
 Supported scaler geometry is Macronix C22017/C22018, with a fixed FW2 update window at `0x400000–0x800000` on both chip sizes. Factory FW1 is preserved. Normal installs erase the rounded image span and verify that complete span; smaller images retain the flash tail beyond it. A scaler restore covers all FW2 from a validated backup.
 
+Winbond EF4018 has a separate read-only profile for model verification and backup. It uses the existing bounded `03h`/24-bit read path. Read geometry does not grant write geometry: scaler write setup and the independent program/restore guard reject this profile. USB updates still validate the installed scaler hash and then independently identify and validate the paired hub's shared SPI.
+
+VIA shared-SPI identification uses the single-command-byte `C1/9F` request with a four-byte USB receive buffer, taking the first three bytes as JEDEC ID. The receive-buffer length does not select the SPI command length. All-zero and all-FF IDs stop before reads or erase; other IDs still require the existing explicit geometry profile.
+
 Included secondary components travel as unchanged bytes in the stock scaler container. The monitor applies the relevant components after restart. This is why a scaler package can include an HDMI/bridge update without a standalone raw-HDMI backend.
 
 ## USB hub/PD engine
 
 `vli.c` implements a separate vendor-control SPI protocol and pure flash planner. `vli-cli.c` adds model authorization, a read-only installed-scaler check, paired-hub opening, consistent shared-flash reads, backup receipt creation, programming, and final verification.
 
-The selected `2109:8886` billboard must have the compatible immediate USB2 device ancestor `2109:2822`. `macos.c` uses normal IOKit access; no root helper, driver seizure, or kernel extension is added. A denied open stops the route rather than overriding the OS driver.
+The selected `2109:8886` billboard must have the compatible immediate USB2 device ancestor `2109:2822`. `macos.c` uses normal IOKit access; no root helper, driver seizure, or kernel extension is added. If the paired hub's exclusive open returns `kIOReturnExclusiveAccess`, its interface remains available for `DeviceRequestTO` device-recipient vendor controls while the macOS hub driver stays attached. Standard, class, and interface-recipient requests are rejected on this shared path. Other open failures and any denied scaler-bridge open stop the route. Cleanup closes an exclusive connection only when this process acquired it.
 
 Runtime silicon and flash checks are mandatory. The planner requires valid factory hub and current PD metadata, bounded payloads, and consistent linked headers. It rejects unknown/ambiguous layouts and protected SPI configurations.
 
@@ -66,4 +70,4 @@ Backup files are exclusively created, verified through their open inode, and dur
 
 ## Validation boundary
 
-The tests demonstrate implementation behavior against image fixtures, memory-only USB/SPI models, injected failures, and offscreen UI states. They do not certify macOS hub-driver coexistence, physical controller behavior, model-specific secondary update behavior, or power-loss fallback. [Evidence and outstanding validation →](VALIDATION.md)
+The tests demonstrate implementation behavior against image fixtures, memory-only USB/SPI models, a fake native USB vtable, injected failures, and offscreen UI states. Separate read-only native PD version reads demonstrate hub-driver coexistence for those requests on two ES07D03 units. They do not certify physical erase/programming behavior, model-specific secondary updates, or power-loss fallback. [Evidence and outstanding validation →](VALIDATION.md)

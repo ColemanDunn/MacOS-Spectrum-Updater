@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0 — build 18
+
+- Fix USB shared-SPI JEDEC identification: `9F` uses the one-command-byte `C1` request with a four-byte USB reply. The previous `C8` request returned zeros on a physical VL822Q7.
+- Confirmed three read-only `C1/9F` queries returned `EF301200` over direct USB-C; the legacy `C4/90` query returned the matching `EF11` manufacturer/device pair. No firmware writes were sent during these probes.
+- Native full shared-SPI reads matched twice and PD 19.02 layout planning passed. Temporary setup registers were restored and read back; that probe prohibited flash write-enable/erase/program commands.
+- Two ES07D03 PD 17.02 → 19.02 installations over direct USB-C passed durable backup and full shared-SPI readback. Normal pictures and the 19.02 headers were confirmed after the required monitor DC power cycles. Both units passed two short display-sleep/wake checks at their current 120 Hz modes; long-term stability remains untested.
+- Add a measured-transaction regression and zero/FF-ID cleanup tests. Invalid ID responses now have a distinct explanation instead of being described as an unsupported chip.
+
+## 1.0 — build 17
+
+- Recognize scaler JEDEC EF4018 for bounded read-only model verification and backup. USB hub/PD updates can now reach the existing installed-image authorization check on units with this chip.
+- Keep EF4018 scaler write setup, programming, and restoration disabled. No erase/program geometry or USB shared-SPI chip profile was added.
+- Add full FW2 read, write-refusal, and neighboring-ID rejection tests. A build 16 PD update attempt stopped at the unsupported scaler ID before backup or erase; a successful hardware update remains unvalidated.
+
+## 1.0 — build 16
+
+- Fix native access to the directly paired VIA USB2 hub when the macOS hub driver already owns it (`0xe00002c5`). Device-recipient vendor requests can use IOKit's shared control path without seizing or detaching the driver.
+- Retain exclusive-open requirements for the scaler bridge and reject other open errors. Close an exclusive connection only when this process acquired it.
+- Add ten offline native-access scenarios with a fake USB interface, including rejected standard/class requests and cleanup ownership.
+- Read-only native PD version requests succeeded on two ES07D03 monitors connected directly to an M4 Pro Mac on macOS 27.0.1. Firmware programming, boot, and wake behavior remain unvalidated.
+
 ## 1.0 — build 15
 
 ### App and workflow

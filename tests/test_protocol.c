@@ -93,6 +93,31 @@ int main(int argc,char **argv){CHECK(argc==2);uint8_t *image=NULL;size_t n=0;cha
     setup(&m,&s,image,n);CHECK(sp_begin(&s)==0);CHECK(sp_flash_setup(&s)==0);m.corrupt_program=true;CHECK(sp_program(&s,image,n,m.flash+SP_BASE,SP_LIMIT-SP_BASE,NULL,NULL)<0);CHECK(strstr(s.error,"verification"));cleanup_check(&m,&s);
     setup(&m,&s,image,n);m.jedec[0]=0xef;CHECK(sp_begin(&s)<0);CHECK(!m.erases&&!s.geometry_known);cleanup_check(&m,&s);
     setup(&m,&s,image,n);m.jedec[2]=0x19;CHECK(sp_begin(&s)<0);CHECK(!m.erases&&!s.geometry_known);cleanup_check(&m,&s);
+    /* EF4018 permits the same 24-bit 03 read for USB model authorization,
+       but must never enter scaler write setup, program, or restore. */
+    setup(&m,&s,image,n);memcpy(m.jedec,(uint8_t[]){0xef,0x40,0x18},3);
+    CHECK(sp_begin(&s)==0);CHECK(s.read_geometry_known&&!s.geometry_known);
+    CHECK(s.flash_capacity==0x1000000u);
+    uint8_t *read_only=malloc(SP_LIMIT-SP_BASE);CHECK(read_only);
+    CHECK(sp_read(&s,SP_BASE,read_only,SP_LIMIT-SP_BASE,NULL,NULL)==0);
+    CHECK(!memcmp(read_only,m.flash+SP_BASE,SP_LIMIT-SP_BASE));
+    CHECK(sp_validate_backup(read_only,SP_LIMIT-SP_BASE,&info,err,sizeof err)==0);
+    CHECK(sp_read(&s,SP_LIMIT,sample,1,NULL,NULL)<0);
+    unsigned before_write=m.calls;
+    CHECK(sp_flash_setup(&s)<0);CHECK(!s.flash_ready&&m.calls==before_write);
+    CHECK(strstr(s.error,"read-only"));
+    s.flash_ready=true; /* The independent program guard must also refuse it. */
+    CHECK(sp_program(&s,image,n,read_only,SP_LIMIT-SP_BASE,NULL,NULL)<0);
+    CHECK(sp_restore(&s,read_only,SP_LIMIT-SP_BASE,NULL,NULL)<0);
+    CHECK(m.calls==before_write&&!m.erases&&!m.pages&&!m.debug_count);
+    s.flash_ready=false;free(read_only);cleanup_check(&m,&s);
+    const uint8_t rejected_reads[][3]={{0xef,0x40,0x17},{0xef,0x40,0x19},{0xef,0x60,0x18},{0xee,0x40,0x18}};
+    for(unsigned i=0;i<sizeof rejected_reads/sizeof rejected_reads[0];i++){
+      setup(&m,&s,image,n);memcpy(m.jedec,rejected_reads[i],3);
+      CHECK(sp_begin(&s)<0);CHECK(!s.read_geometry_known&&!s.geometry_known);
+      before_write=m.calls;CHECK(sp_read(&s,SP_BASE,sample,sizeof sample,NULL,NULL)<0);
+      CHECK(m.calls==before_write&&!m.erases&&!m.pages);cleanup_check(&m,&s);
+    }
     setup(&m,&s,image,n);CHECK(sp_begin(&s)==0);m.status=0x0c;CHECK(sp_flash_setup(&s)<0);CHECK(!m.erases&&m.status==0x0c);cleanup_check(&m,&s);
     setup(&m,&s,image,n);CHECK(sp_begin(&s)==0);CHECK(sp_flash_setup(&s)==0);size_t raw_size=SP_LIMIT-SP_BASE;uint8_t *raw=malloc(raw_size);CHECK(raw);memcpy(raw,m.flash+SP_BASE,raw_size);for(size_t i=n;i<raw_size;i++)raw[i]=(uint8_t)(i*7+3);CHECK(sp_restore(&s,raw,raw_size,NULL,NULL)==0);CHECK(m.erases==raw_size/SP_BLOCK&&m.pages==raw_size/SP_PAGE);CHECK(!memcmp(m.flash+SP_BASE,raw,raw_size));CHECK(!memcmp(m.flash,image,0x10000));free(raw);cleanup_check(&m,&s);
     /* The reported C22018 has twice the physical capacity. Exercise both

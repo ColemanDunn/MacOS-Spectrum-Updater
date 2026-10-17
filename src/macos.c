@@ -16,11 +16,32 @@ int sp_macos_list(void){
     while((s=IOIteratorNext(it))){if(target(s)){uint64_t id=0;IORegistryEntryGetRegistryEntryID(s,&id);char product[256],serial[256];text_property(s,"USB Product Name",product,sizeof product);text_property(s,"USB Serial Number",serial,sizeof serial);if(comma)printf(",");comma=true;printf("{\"registry_id\":\"%llu\",\"location_id\":\"%08x\",\"vid\":\"2109\",\"pid\":\"8886\",\"product\":",(unsigned long long)id,number(s,"locationID"));json_string(product);printf(",\"serial\":");json_string(serial);printf("}");}IOObjectRelease(s);}IOObjectRelease(it);printf("]\n");return 0;
 }
 static ssize_t transfer(void *context,uint8_t type,uint8_t request,uint16_t value,uint16_t index,void *data,uint16_t n,uint32_t ms){
-    sp_macos *m=context;IOUSBDevRequestTO r={0};r.bmRequestType=type;r.bRequest=request;r.wValue=value;r.wIndex=index;r.wLength=n;r.pData=data;r.noDataTimeout=ms;r.completionTimeout=ms;
+    sp_macos *m=context;
+    /* Shared hub access is only for the VIA device-recipient vendor protocol.
+     * Standard USB state changes still require an exclusive device open. */
+    if(m->shared_hub&&type!=0x40&&type!=0xc0){fprintf(stderr,"Shared VIA hub access only permits device vendor requests.\n");return -1;}
+    IOUSBDevRequestTO r={0};r.bmRequestType=type;r.bRequest=request;r.wValue=value;r.wIndex=index;r.wLength=n;r.pData=data;r.noDataTimeout=ms;r.completionTimeout=ms;
     IOReturn result=(*m->usb)->DeviceRequestTO(m->usb,&r);if(result!=kIOReturnSuccess){fprintf(stderr,"IOKit USB failure 0x%08x on request %02x\n",(unsigned)result,request);return -1;}return (ssize_t)r.wLenDone;
 }
 static uint64_t now(void *context){(void)context;struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return (uint64_t)t.tv_sec*1000+(uint64_t)t.tv_nsec/1000000;}
 static void sleep_ms(void *context,uint32_t ms){(void)context;struct timespec t={(time_t)(ms/1000),(long)(ms%1000)*1000000};while(nanosleep(&t,&t)&&t.tv_sec>=0){} }
+static int open_interface(uint16_t expected_pid,sp_macos *m,char *err,size_t z){
+    UInt16 vid=0,pid=0;IOReturn r=(*m->usb)->GetDeviceVendor(m->usb,&vid);
+    if(r==kIOReturnSuccess)r=(*m->usb)->GetDeviceProduct(m->usb,&pid);
+    if(r!=kIOReturnSuccess||vid!=0x2109||pid!=expected_pid){(*m->usb)->Release(m->usb);m->usb=NULL;snprintf(err,z,"USB identity unavailable or changed.");return -1;}
+    r=(*m->usb)->USBDeviceOpen(m->usb);
+    if(r==kIOReturnSuccess)m->opened=true;
+    else if(expected_pid==0x2822&&r==kIOReturnExclusiveAccess){
+        /* The macOS hub driver normally owns the directly paired hub.
+         * IOKit permits DeviceRequestTO without an exclusive open; retain the
+         * interface for VIA vendor controls without seizing the hub driver. */
+        m->shared_hub=true;
+    }else{
+        (*m->usb)->Release(m->usb);m->usb=NULL;
+        snprintf(err,z,"Cannot open VIA bridge (0x%08x). Check cable, selected hub source, and macOS USB permissions. The app never seizes the device.",(unsigned)r);return -1;
+    }
+    return 0;
+}
 static int open_role(uint64_t requested,uint16_t expected_pid,sp_macos *m,sp_transport *t,char *err,size_t z){
     memset(m,0,sizeof *m);io_iterator_t it=iterator();if(!it){snprintf(err,z,"Cannot enumerate USB registry.");return -1;}io_service_t s,chosen=0;
     while((s=IOIteratorNext(it))){uint64_t id=0;IORegistryEntryGetRegistryEntryID(s,&id);if(id==requested&&number(s,"idVendor")==0x2109&&number(s,"idProduct")==expected_pid){chosen=s;break;}IOObjectRelease(s);}IOObjectRelease(it);
@@ -29,11 +50,10 @@ static int open_role(uint64_t requested,uint16_t expected_pid,sp_macos *m,sp_tra
     if(r||!plugin){snprintf(err,z,"Cannot create macOS USB device interface (0x%08x).",(unsigned)r);return -1;}
     HRESULT hr=(*plugin)->QueryInterface(plugin,CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID500),(LPVOID *)&m->usb);(*plugin)->Release(plugin);
     if(hr||!m->usb){snprintf(err,z,"IOKit USB device interface unavailable.");return -1;}
-    UInt16 vid=0,pid=0;(*m->usb)->GetDeviceVendor(m->usb,&vid);(*m->usb)->GetDeviceProduct(m->usb,&pid);if(vid!=0x2109||pid!=expected_pid){(*m->usb)->Release(m->usb);m->usb=NULL;snprintf(err,z,"USB identity changed.");return -1;}
-    r=(*m->usb)->USBDeviceOpen(m->usb);if(r){(*m->usb)->Release(m->usb);m->usb=NULL;snprintf(err,z,"Cannot open VIA bridge (0x%08x). Check cable, selected hub source, and macOS USB permissions. The app never seizes the device.",(unsigned)r);return -1;}
+    if(open_interface(expected_pid,m,err,z))return -1;
     m->registry=requested;*t=(sp_transport){m,transfer,now,sleep_ms};return 0;
 }
-void sp_macos_close(sp_macos *m){if(m->usb){(*m->usb)->USBDeviceClose(m->usb);(*m->usb)->Release(m->usb);m->usb=NULL;}}
+void sp_macos_close(sp_macos *m){if(m->usb){if(m->opened)(*m->usb)->USBDeviceClose(m->usb);(*m->usb)->Release(m->usb);}memset(m,0,sizeof *m);}
 
 int sp_macos_open(uint64_t requested,sp_macos *m,sp_transport *t,char *err,size_t z){return open_role(requested,0x8886,m,t,err,z);}
 int sp_macos_open_paired_hub(uint64_t requested,sp_macos *m,sp_transport *t,char *err,size_t z){

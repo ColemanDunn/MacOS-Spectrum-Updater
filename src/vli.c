@@ -71,7 +71,11 @@ int sp_vli_begin(sp_vli_session *s){
     if(reg_read(s,0xf88c,&version)||reg_read(s,0xf88e,&id1)||reg_read(s,0xf88f,&id2)||reg_read(s,0xf651,&pkg))return -1;
     if(version!=0xf0||id1!=0x18||id2!=0x35||((pkg>>1)&7)!=0)return fail(s->error,sizeof s->error,"Hub is not the supported VL822Q7 silicon. Nothing erased.");
     for(unsigned i=0;i<4;i++){if(reg_read(s,regs[i],s->registers+i))return -1;s->register_saved[i]=true;uint8_t value=s->registers[i];value=i==3?(uint8_t)(value|8):(uint8_t)(value&(i==0?0x77:i==1?0xfc:0xf9));if(reg_write(s,regs[i],value))return -1;}
-    uint8_t id[4]={0};if(req(s,0xc0,0xc8,0x9f,0,id,4))return -1;memcpy(s->jedec,id,3);
+    /* JEDEC 9F has one command byte and no address/dummy bytes, just like
+       status 05. C1 sends that byte; the four-byte USB reply is a separate
+       length. C8 clocks past the ID on VL822Q7 and returns zeros. */
+    uint8_t id[4]={0};if(req(s,0xc0,0xc1,0x9f,0,id,4))return -1;memcpy(s->jedec,id,3);
+    if((!id[0]&&!id[1]&&!id[2])||(id[0]==0xff&&id[1]==0xff&&id[2]==0xff))return fail(s->error,sizeof s->error,"Shared-SPI flash did not return a valid JEDEC ID. Nothing erased.");
     /* Standard 4-KiB sector/page geometry only. Other SPI variants are rejected. */
     bool maker=(id[0]==0xc2&&id[1]==0x20)||(id[0]==0xef&&(id[1]==0x30||id[1]==0x40));
     if(!maker||id[2]<0x12||id[2]>0x14){snprintf(s->error,sizeof s->error,"Shared-SPI JEDEC %02X%02X%02X has no supported 4-KiB profile. Nothing erased.",id[0],id[1],id[2]);return -1;}
