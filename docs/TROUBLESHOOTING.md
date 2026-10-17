@@ -38,6 +38,8 @@ A chip may have a valid ID but no supported geometry/configuration profile. The 
 
 Build 17 recognizes scaler EF4018 for read-only model checks and backups, allowing a USB hub/PD update to continue to the existing compatibility checks. It still refuses scaler writes on that chip. Earlier builds stop at EF4018 even when only USB-C/PD firmware was selected. After a stopped maintenance attempt, power-cycle the monitor before trying the corrected build.
 
+Build 18 fixes a separate zero-filled USB shared-SPI ID response seen on VL822Q7. The old `C8/9F` transaction returned `00000000`; the corrected single-command-byte `C1/9F` transaction returned the valid `EF301200` response over the same USB-C connection. Zero or FF responses are rejected as invalid identification rather than accepted as a chip profile. Keep the log if this persists on the corrected build.
+
 ## Paired hub/controller/layout could not be validated
 
 The hub/PD engine requires the selected billboard's direct compatible hub ancestor, VL822Q7 silicon, supported SPI, consistent headers, and valid PD identity/checksum. An unrelated hub, OS access denial, ambiguous legacy PD layout, SPI protection, or unsupported hardware causes rejection.

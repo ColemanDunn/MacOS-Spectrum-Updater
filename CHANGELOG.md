@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0 — build 18
+
+- Fix USB shared-SPI JEDEC identification: `9F` uses the one-command-byte `C1` request with a four-byte USB reply. The previous `C8` request returned zeros on a physical VL822Q7.
+- Confirmed three read-only `C1/9F` queries returned `EF301200` over direct USB-C; the legacy `C4/90` query returned the matching `EF11` manufacturer/device pair. No firmware writes were sent during these probes.
+- Native full shared-SPI reads matched twice and PD 19.02 layout planning passed. Temporary setup registers were restored and read back; that probe prohibited flash write-enable/erase/program commands.
+- Add a measured-transaction regression and zero/FF-ID cleanup tests. Invalid ID responses now have a distinct explanation instead of being described as an unsupported chip.
+
 ## 1.0 — build 17
 
 - Recognize scaler JEDEC EF4018 for bounded read-only model verification and backup. USB hub/PD updates can now reach the existing installed-image authorization check on units with this chip.

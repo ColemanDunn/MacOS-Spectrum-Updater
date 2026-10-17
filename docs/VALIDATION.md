@@ -8,6 +8,8 @@ The existing stored results describe the packaged 1.0 build 15 source and prior 
 
 Build 17 adds a read-only EF4018 scaler profile. Its protocol simulator reads the complete 4 MiB FW2 and validates the result, rejects scaler write setup without sending setup commands, independently rejects program/restore even with a forced ready flag, and rejects neighboring unrecognized IDs. The stored build 15 assertion snapshot below remains unchanged; current runs are written under gitignored `build/`.
 
+Build 18 corrects the VIA JEDEC transaction to `C0/C1`, value `009F`, index zero, four-byte USB reply. The VIA simulator includes the measured successful `C1/9F` and zero-filled legacy `C8/9F` responses, plus zero/FF identification rejection and register cleanup (1,536,978 assertions in the focused run).
+
 | Area | Recorded result | Evidence |
 | --- | --- | --- |
 | MStar scaler protocol | 21,058,882 assertions | [protocol-tests.json](validation/protocol-tests.json) |
@@ -47,13 +49,16 @@ CLI tests replace native USB transports with memory-only stubs. ASan/UBSan appli
 | ES07DC9, ES07E30, ES07D02 scaler | Exact stock images/profile logic validated offline; real update sessions not yet documented |
 | VIA paired-hub access | Build 16: read-only native PD header reads succeeded on two directly connected ES07D03 units, Apple M4 Pro, macOS 27.0.1. The unpatched transport failed on both with `kIOReturnExclusiveAccess` (`0xe00002c5`). No firmware was written. |
 | VIA hub/PD programming | Native backend implemented and offline tests passed; real macOS erase/program/readback/restart behavior not yet tested |
-| ES07D03 with scaler EF4018 | A build 16 PD 19.02 attempt stopped at the scaler geometry check before hub setup, backup, or erase. Maintenance ended and the display remained detected. Build 17 adds read-only model proof for this ID; successful completion still needs hardware evidence. |
+| ES07D03 with scaler EF4018 | Build 17 completed the 4 MiB scaler read and exact installed-model proof. It then stopped before erase at a zero-filled shared-SPI ID response. No firmware was changed. |
+| VIA identification and complete reads | Build 18 request: three read-only `C1/9F` queries returned `EF301200` on a directly USB-C-connected ES07D03; legacy `C4/90` returned `EF11EF11`. The real VIA engine then identified 262,144 bytes, read the entire shared SPI twice with identical results, and validated the PD 19.02 plan against the installed factory header and PD CRC/layout. The probe prohibited flash write-enable/erase/program commands, restored all four setup registers, and checked their original values. |
 | Power-loss factory fallback | Not certified by these tests |
 | Custom firmware behavior improvement | Not included in this stock release |
 
 A prior D03 update does not establish coverage for every revision or original factory image. A final flash readback does not prove boot success, application of secondary components, calibration, wake timing, or improved HDR/refresh transitions.
 
 The native access observation used `sp_macos_open_paired_hub` and one fixed vendor IN request (`C0/C4`, value `0203`, index `0010`, length 32, timeout 3000 ms) per unit. Both returned a valid VIA `2109:0103` PD header with version `0A.89.17.02`, matching the independent libusb read. No scaler ISP, SPI setup-register changes, erase, or programming was performed. This does not establish that vendor OUT requests or a complete firmware update work on the shared path.
+
+The later build 18 read/plan probe also exercised eight native vendor OUT configuration writes (four setup and four restoration requests). Every restored register read matched its original value. Firmware write-enable, erase and programming were explicitly blocked by that probe's transport wrapper and were not tested by it.
 
 ## Outstanding work
 

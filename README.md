@@ -37,7 +37,7 @@ Firmware is **not bundled**. This repository distributes the updater and origina
 
 ## Current validation status
 
-**The ES07D03 scaler route has a reported successful physical update. USB hub/PD programming and updates on the other model units have not yet been physically validated.** Build 16 fixes access to a paired hub already owned by the macOS driver; read-only native PD-version requests succeeded on two ES07D03 units on macOS 27.0.1. Build 17 adds read-only scaler EF4018 model checks while retaining the scaler write prohibition. Actual USB programming, restart, and wake behavior still need documented hardware results. Protocol and failure handling are covered separately by offline simulations.
+**The ES07D03 scaler route has a reported successful physical update. USB hub/PD programming and updates on the other model units have not yet been physically validated.** Build 16 fixes access to a paired hub already owned by the macOS driver; read-only native PD-version requests succeeded on two ES07D03 units on macOS 27.0.1. Build 17 adds read-only scaler EF4018 model checks while retaining the scaler write prohibition. Build 18 corrects VIA flash identification; complete native shared-SPI reads and PD update-plan validation passed over direct USB-C. Actual USB programming, restart, and wake behavior still need documented hardware results. Protocol and failure handling are covered separately by offline simulations.
 
 A supported profile means the software recognizes the specified model/release/controller combination. It does not mean every unit, factory firmware, flash chip, or recovery condition is covered. Unknown installed firmware and hardware are rejected before erase. See [validation and limitations](docs/VALIDATION.md).
 

@@ -14,6 +14,12 @@ fu-vli.rs and vli.quirk. Upstream authors include VIA Corporation and Richard
 Hughes; upstream code uses LGPL-2.1-or-later. Our files vli.c/vli-cli.c are
 independent original implementations of the protocol facts, not source copies.
 
+Measured VL822Q7 JEDEC-ID transaction: C0/C1, value 009F, index 0000,
+four-byte USB reply. This sends the single 9F opcode without address/dummy
+bytes. Three direct USB-C reads returned EF301200; C4/0090 returned EF11EF11.
+The old C8/009F request returned 00000000 (C2/009F returned 30120000).
+The USB receive-buffer size must not be used as the SPI command-byte count.
+
 Inno installer stream structure:
 https://github.com/dscharrer/innoextract/tree/master/src/stream
 Upstream author Daniel Scharrer; upstream source uses the zlib license.
