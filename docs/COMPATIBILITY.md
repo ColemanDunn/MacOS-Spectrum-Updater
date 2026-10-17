@@ -29,9 +29,12 @@ The catalog associates these with the four IPS model profiles above. The backend
 | Route | Supported IDs | Geometry |
 | --- | --- | --- |
 | Scaler | Macronix C22017, C22018 | 8 MiB or 16 MiB chip; fixed 4 MiB FW2 window at `0x400000–0x800000` |
+| Scaler, read only | Winbond EF4018 | 16 MiB; bounded model verification and backup reads. Scaler write setup, erase, program, and restore are refused. USB hub/PD authorization still requires the exact compatible installed scaler image. |
 | USB shared SPI | Macronix C22012–C22014; Winbond EF3012–EF3014 / EF4012–EF4014 | 256 KiB, 512 KiB, or 1 MiB; supported 4 KiB erase/256-byte page geometry |
 
 The chip ID alone is not the complete authorization check. Configuration, protection status, current image, and layout also matter. Other chip IDs/configurations stop before erase.
+
+The EF4018 read profile follows Winbond's [W25Q128FV datasheet, revision M](https://www.winbond.com/resource-files/w25q128fv%20rev.m%2005132016%20kms.pdf), sections 8.1.1 (standard SPI ID) and 8.2.6 (`03h`, 24-bit read addresses). The ID does not identify an exact package suffix or validate a scaler write configuration.
 
 ## Other Spectrum names
 

@@ -35,6 +35,8 @@ The catalog isn't a generic “any BIN” input. Target authorization and instal
 
 Supported scaler geometry is Macronix C22017/C22018, with a fixed FW2 update window at `0x400000–0x800000` on both chip sizes. Factory FW1 is preserved. Normal installs erase the rounded image span and verify that complete span; smaller images retain the flash tail beyond it. A scaler restore covers all FW2 from a validated backup.
 
+Winbond EF4018 has a separate read-only profile for model verification and backup. It uses the existing bounded `03h`/24-bit read path. Read geometry does not grant write geometry: scaler write setup and the independent program/restore guard reject this profile. USB updates still validate the installed scaler hash and then independently identify and validate the paired hub's shared SPI.
+
 Included secondary components travel as unchanged bytes in the stock scaler container. The monitor applies the relevant components after restart. This is why a scaler package can include an HDMI/bridge update without a standalone raw-HDMI backend.
 
 ## USB hub/PD engine

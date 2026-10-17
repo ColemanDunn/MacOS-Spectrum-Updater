@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0 — build 17
+
+- Recognize scaler JEDEC EF4018 for bounded read-only model verification and backup. USB hub/PD updates can now reach the existing installed-image authorization check on units with this chip.
+- Keep EF4018 scaler write setup, programming, and restoration disabled. No erase/program geometry or USB shared-SPI chip profile was added.
+- Add full FW2 read, write-refusal, and neighboring-ID rejection tests. A build 16 PD update attempt stopped at the unsupported scaler ID before backup or erase; a successful hardware update remains unvalidated.
+
 ## 1.0 — build 16
 
 - Fix native access to the directly paired VIA USB2 hub when the macOS hub driver already owns it (`0xe00002c5`). Device-recipient vendor requests can use IOKit's shared control path without seizing or detaching the driver.

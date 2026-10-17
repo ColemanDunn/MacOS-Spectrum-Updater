@@ -36,6 +36,8 @@ If the installed scaler image is an unrecognized older factory release, the engi
 
 A chip may have a valid ID but no supported geometry/configuration profile. The operation stops before erase when this is detected. Document the reported ID and exact model; do not substitute a guessed flash size. D03 C22017/C22018 profiles already incorporate the earlier chip-size correction.
 
+Build 17 recognizes scaler EF4018 for read-only model checks and backups, allowing a USB hub/PD update to continue to the existing compatibility checks. It still refuses scaler writes on that chip. Earlier builds stop at EF4018 even when only USB-C/PD firmware was selected. After a stopped maintenance attempt, power-cycle the monitor before trying the corrected build.
+
 ## Paired hub/controller/layout could not be validated
 
 The hub/PD engine requires the selected billboard's direct compatible hub ancestor, VL822Q7 silicon, supported SPI, consistent headers, and valid PD identity/checksum. An unrelated hub, OS access denial, ambiguous legacy PD layout, SPI protection, or unsupported hardware causes rejection.

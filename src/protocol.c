@@ -41,13 +41,21 @@ static int identify(sp_session *s){const uint8_t a[]={0x92,0x10,0x9f},b[]={0x92,
        Both use 24-bit addresses, D8=64 KiB erase, 02=256-byte program.
        Capacity does not widen the permitted ES07D03 FW2 write interval.
        RDID identifies a compatible profile, not an exact package suffix. */
-    s->geometry_known=false;s->flash_capacity=0;
+    s->read_geometry_known=false;s->geometry_known=false;s->flash_capacity=0;
     if(s->jedec[0]==0xc2&&s->jedec[1]==0x20){
         if(s->jedec[2]==0x17)s->flash_capacity=0x800000u;
         if(s->jedec[2]==0x18)s->flash_capacity=0x1000000u;
         s->geometry_known=s->flash_capacity>=SP_LIMIT;
     }
-    if(!s->geometry_known){snprintf(s->error,sizeof s->error,"JEDEC %02X%02X%02X lacks a supported geometry profile. Nothing erased.",s->jedec[0],s->jedec[1],s->jedec[2]);return -1;}return 0;
+    s->read_geometry_known=s->geometry_known;
+    /* Winbond W25Q128FV rev M (2016-05-13), sections 8.1.1 and 8.2.6:
+       EF4018 identifies standard SPI; 03 reads use 24-bit addresses.
+       Permit bounded reads for installed-model proof and backup only.
+       This does NOT authorize scaler setup, erase, program or restore. */
+    if(s->jedec[0]==0xef&&s->jedec[1]==0x40&&s->jedec[2]==0x18){
+        s->flash_capacity=0x1000000u;s->read_geometry_known=true;
+    }
+    if(!s->read_geometry_known){snprintf(s->error,sizeof s->error,"JEDEC %02X%02X%02X lacks a supported geometry profile. Nothing erased.",s->jedec[0],s->jedec[1],s->jedec[2]);return -1;}return 0;
 }
 static int wait_ready(sp_session *s,uint32_t limit,uint32_t delay){
     uint64_t start=s->io.clock_ms(s->io.context);unsigned count=0;
@@ -68,10 +76,12 @@ static int read_page(sp_session *s,uint32_t address,uint8_t *out){
     return finish_spi(s,rc);
 }
 int sp_read(sp_session *s,uint32_t address,uint8_t *out,size_t n,sp_progress progress,void *context){
+    if(!s->read_geometry_known)return fail(s,"No validated flash read geometry profile.");
     if(!n||address>=SP_LIMIT||n>SP_LIMIT-address)return fail(s,"Invalid SPI read interval.");
     uint8_t page[SP_PAGE];for(size_t i=0;i<n;i+=SP_PAGE){size_t take=n-i<SP_PAGE?n-i:SP_PAGE;if(read_page(s,address+(uint32_t)i,page))return -1;memcpy(out+i,page,take);if(progress&&((i%SP_BLOCK)==0||i+take==n))progress(context,"Reading",(uint32_t)(i+take),(uint32_t)n);}return 0;
 }
 int sp_begin(sp_session *s){
+    s->read_geometry_known=false;s->geometry_known=false;s->flash_capacity=0;
     s->error[0]=0;for(unsigned i=0;i<2;i++){uint8_t reg=(uint8_t)(0xa0+i),v;if(gpio_read(s,reg,&v))return -1;s->pins[i]=v;s->pins_saved[i]=true;if(gpio_write(s,reg,(uint8_t)(v|4))||gpio_read(s,reg,&v))return -1;if(v!=(uint8_t)(s->pins[i]|4))return fail(s,"Hub GPIO did not read back correctly.");}
     s->io.sleep_ms(s->io.context,200);const uint8_t enter[]={0x92,'M','S','T','A','R'};s->isp_attempted=true;if(send(s,enter,sizeof enter))return -1;s->io.sleep_ms(s->io.context,50);
     uint8_t page[SP_PAGE];if(read_page(s,0xff00,page))return -1;if(memcmp(page,"MST9U4",6))return fail(s,"Connected scaler lacks required MST9U4 signature.");return identify(s);
@@ -119,6 +129,7 @@ static int flash_setup_attempt(sp_session *s){
 }
 int sp_flash_setup(sp_session *s){
     s->flash_ready=false;
+    if(s->read_geometry_known&&!s->geometry_known)return fail(s,"This scaler chip supports read-only model verification and backup; scaler writes are unsupported. Nothing erased.");
     if(!s->geometry_known)return fail(s,"No validated flash geometry profile.");
     int result=-1;
     /* Vendor retries the setup at most five times. Retry only a successfully

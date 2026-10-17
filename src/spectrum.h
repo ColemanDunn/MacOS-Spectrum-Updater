@@ -21,7 +21,8 @@ typedef struct {
     bool reg426_saved, reg4_saved;
     bool flash_ready;
     uint8_t jedec[3];
-    bool geometry_known;
+    bool read_geometry_known;
+    bool geometry_known; /* validated erase/program profile; independent of reads */
     uint32_t flash_capacity; /* physical capacity; SP_LIMIT remains the FW2 bound */
     uint8_t pins[2], reg426, reg4;
     unsigned cleanup_errors;

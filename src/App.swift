@@ -531,6 +531,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func failureExplanation(_ output: String) -> String {
+        if output.contains("scaler writes are unsupported") {
+            return "This scaler chip supports model checks and backups, but scaler firmware installation is unsupported. No firmware was erased. Unplug the monitor’s DC power for 10 seconds before another operation."
+        }
         if output.contains("lacks a supported geometry profile") || output.contains("No validated flash geometry profile") || output.contains("has no supported 4-KiB profile") {
             return "This flash-memory chip is unsupported. No firmware was erased or installed. Unplug the monitor’s DC power for 10 seconds, reconnect it, and check Details for the detected chip."
         }

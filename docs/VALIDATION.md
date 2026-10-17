@@ -6,6 +6,8 @@
 
 The existing stored results describe the packaged 1.0 build 15 source and prior unchanged protocol implementations. They were produced with offline simulators, test fixtures, stubbed CLI transports, and offscreen views. No monitor operation was performed to produce that publication package. Build 16 adds ten native USB access-policy scenarios in `tests/test_macos_access.c`, using a fake USB vtable and no device access; see the separate live read-only observations below.
 
+Build 17 adds a read-only EF4018 scaler profile. Its protocol simulator reads the complete 4 MiB FW2 and validates the result, rejects scaler write setup without sending setup commands, independently rejects program/restore even with a forced ready flag, and rejects neighboring unrecognized IDs. The stored build 15 assertion snapshot below remains unchanged; current runs are written under gitignored `build/`.
+
 | Area | Recorded result | Evidence |
 | --- | --- | --- |
 | MStar scaler protocol | 21,058,882 assertions | [protocol-tests.json](validation/protocol-tests.json) |
@@ -45,6 +47,7 @@ CLI tests replace native USB transports with memory-only stubs. ASan/UBSan appli
 | ES07DC9, ES07E30, ES07D02 scaler | Exact stock images/profile logic validated offline; real update sessions not yet documented |
 | VIA paired-hub access | Build 16: read-only native PD header reads succeeded on two directly connected ES07D03 units, Apple M4 Pro, macOS 27.0.1. The unpatched transport failed on both with `kIOReturnExclusiveAccess` (`0xe00002c5`). No firmware was written. |
 | VIA hub/PD programming | Native backend implemented and offline tests passed; real macOS erase/program/readback/restart behavior not yet tested |
+| ES07D03 with scaler EF4018 | A build 16 PD 19.02 attempt stopped at the scaler geometry check before hub setup, backup, or erase. Maintenance ended and the display remained detected. Build 17 adds read-only model proof for this ID; successful completion still needs hardware evidence. |
 | Power-loss factory fallback | Not certified by these tests |
 | Custom firmware behavior improvement | Not included in this stock release |
 
