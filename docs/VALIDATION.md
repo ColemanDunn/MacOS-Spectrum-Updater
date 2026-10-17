@@ -4,7 +4,7 @@
 
 ## Software validation
 
-These results describe the packaged 1.0 build 15 source and prior unchanged protocol implementations. They were produced with offline simulators, test fixtures, stubbed CLI transports, and offscreen views. No monitor operation was performed to produce this publication package.
+The existing stored results describe the packaged 1.0 build 15 source and prior unchanged protocol implementations. They were produced with offline simulators, test fixtures, stubbed CLI transports, and offscreen views. No monitor operation was performed to produce that publication package. Build 16 adds ten native USB access-policy scenarios in `tests/test_macos_access.c`, using a fake USB vtable and no device access; see the separate live read-only observations below.
 
 | Area | Recorded result | Evidence |
 | --- | --- | --- |
@@ -43,15 +43,18 @@ CLI tests replace native USB transports with memory-only stubs. ASan/UBSan appli
 | --- | --- |
 | ES07D03 scaler | Prior user-reported successful physical flash, incorporating corrected chip sizing and sequence |
 | ES07DC9, ES07E30, ES07D02 scaler | Exact stock images/profile logic validated offline; real update sessions not yet documented |
-| VIA hub/PD | Native backend implemented and offline tests passed; real macOS access/update behavior not yet tested |
+| VIA paired-hub access | Build 16: read-only native PD header reads succeeded on two directly connected ES07D03 units, Apple M4 Pro, macOS 27.0.1. The unpatched transport failed on both with `kIOReturnExclusiveAccess` (`0xe00002c5`). No firmware was written. |
+| VIA hub/PD programming | Native backend implemented and offline tests passed; real macOS erase/program/readback/restart behavior not yet tested |
 | Power-loss factory fallback | Not certified by these tests |
 | Custom firmware behavior improvement | Not included in this stock release |
 
 A prior D03 update does not establish coverage for every revision or original factory image. A final flash readback does not prove boot success, application of secondary components, calibration, wake timing, or improved HDR/refresh transitions.
 
+The native access observation used `sp_macos_open_paired_hub` and one fixed vendor IN request (`C0/C4`, value `0203`, index `0010`, length 32, timeout 3000 ms) per unit. Both returned a valid VIA `2109:0103` PD header with version `0A.89.17.02`, matching the independent libusb read. No scaler ISP, SPI setup-register changes, erase, or programming was performed. This does not establish that vendor OUT requests or a complete firmware update work on the shared path.
+
 ## Outstanding work
 
-1. Confirm normal macOS IOKit access to the directly paired hub without driver seizure.
+1. Validate complete shared-path VIA setup, programming, cleanup, and restart on compatible hardware; read-only native access alone is insufficient.
 2. Document hub and PD updates on compatible physical units, including backup/readback/restart outcomes.
 3. Document scaler updates on each additional model/controller/flash profile.
 4. Establish original firmware evidence before adding D01/DCA or other targets.

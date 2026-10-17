@@ -2,7 +2,11 @@
 #define SP_MACOS_H
 #include "spectrum.h"
 #include <IOKit/usb/IOUSBLib.h>
-typedef struct { IOUSBDeviceInterface500 **usb; uint64_t registry; } sp_macos;
+typedef struct {
+    IOUSBDeviceInterface500 **usb;
+    uint64_t registry;
+    bool opened, shared_hub;
+} sp_macos;
 int sp_macos_list(void);
 int sp_macos_open(uint64_t,sp_macos *,sp_transport *,char *,size_t);
 int sp_macos_open_paired_hub(uint64_t,sp_macos *,sp_transport *,char *,size_t);

@@ -44,6 +44,8 @@ These routes still need physical validation. Passing offline tests is not a reas
 
 ## IOKit USB error or short transfer
 
+Build 16 handles `0xe00002c5` (`kIOReturnExclusiveAccess`) on the directly paired `2109:2822` hub through IOKit's shared vendor-control path. It leaves the macOS hub driver attached. Earlier builds stop at the exclusive-open attempt. This fallback does not apply to the scaler bridge or to other permission/disconnection errors.
+
 The operation can stop when macOS denies access, the device disconnects, a command fails, or the returned length differs from what the protocol requires. Inspect the surrounding log to determine whether writing had begun.
 
 Do not repeatedly retry a transfer failure mid-update or disconnect power while writes are still active. Follow the cleanup/power-cycle message after the process ends. If erase/programming occurred, preserve the backup and logs and follow [Recovery](RECOVERY.md).

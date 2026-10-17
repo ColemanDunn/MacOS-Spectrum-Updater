@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0 — build 16
+
+- Fix native access to the directly paired VIA USB2 hub when the macOS hub driver already owns it (`0xe00002c5`). Device-recipient vendor requests can use IOKit's shared control path without seizing or detaching the driver.
+- Retain exclusive-open requirements for the scaler bridge and reject other open errors. Close an exclusive connection only when this process acquired it.
+- Add ten offline native-access scenarios with a fake USB interface, including rejected standard/class requests and cleanup ownership.
+- Read-only native PD version requests succeeded on two ES07D03 monitors connected directly to an M4 Pro Mac on macOS 27.0.1. Firmware programming, boot, and wake behavior remain unvalidated.
+
 ## 1.0 — build 15
 
 ### App and workflow

@@ -22,5 +22,12 @@ or invoke innoextract. Its XZ wrapper follows the public XZ stream format:
 https://tukaani.org/xz/xz-file-format.txt
 macOS Compression provides the decoder. Payload SHA256 is checked after decode.
 
+Native shared USB control access:
+Apple macOS SDK IOKit/usb/IOUSBLib.h documents that DeviceRequestTO can be used
+without an exclusive device open, while standard state-changing requests may
+require one. Only a directly paired VIA hub returning kIOReturnExclusiveAccess
+uses this path, restricted to device-recipient vendor controls. The native
+implementation is original; no USBDeviceOpenSeize or driver-detach call is used.
+
 This tool is independent of Eve/Dough and the upstream projects. Referencing a
 protocol does not imply endorsement, vendor approval or hardware certification.
