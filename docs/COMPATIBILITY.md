@@ -20,7 +20,7 @@ Dough's [Spectrum One specification](https://files.bbystatic.com/sZx8dgseD2pOvZW
 | Component | Accepted payload | Required controller | Status |
 | --- | --- | --- | --- |
 | USB hub | 06A4 | VIA VL822Q7 | Native access and complete flash reads verified; hub firmware programming still needs physical validation |
-| USB-C / PD | 0A.89.17.02, 0A.89.19.02 | VIA VL103, recognized shared VL822 layout | Build 18: 17.02 → 19.02 installation, complete shared-SPI readback, and post-power-cycle boot verified on two ES07D03 units over direct USB-C; two short wake checks passed. Other models and long-term wake stability remain unvalidated. |
+| USB-C / PD | 0A.89.17.02, 0A.89.19.02 | VIA VL103, recognized shared VL822 layout | Build 18: 17.02 → 19.02 installation, complete shared-SPI readback, and post-power-cycle boot verified on two ES07D03 units over direct USB-C. Two short wake checks passed, but one unit's intermittent wake failure subsequently recurred. Other models remain unvalidated. |
 
 The catalog associates these with the four IPS model profiles above. The backend additionally requires a directly paired compatible controller, a recognized installed scaler, supported SPI geometry, valid headers/checksums, and a consistent flash layout. Neither the menu selection nor a VIA vendor ID by itself authorizes a write.
 
