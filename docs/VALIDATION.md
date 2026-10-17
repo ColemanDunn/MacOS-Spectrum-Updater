@@ -48,7 +48,9 @@ CLI tests replace native USB transports with memory-only stubs. ASan/UBSan appli
 | ES07D03 scaler | Prior user-reported successful physical flash, incorporating corrected chip sizing and sequence |
 | ES07DC9, ES07E30, ES07D02 scaler | Exact stock images/profile logic validated offline; real update sessions not yet documented |
 | VIA paired-hub access | Build 16: read-only native PD header reads succeeded on two directly connected ES07D03 units, Apple M4 Pro, macOS 27.0.1. The unpatched transport failed on both with `kIOReturnExclusiveAccess` (`0xe00002c5`). No firmware was written. |
-| VIA hub/PD programming | Native backend implemented and offline tests passed; real macOS erase/program/readback/restart behavior not yet tested |
+| VIA PD programming | Build 18 installed PD 19.02 from 17.02 on two ES07D03 units, one at a time over direct USB-C, M4 Pro/macOS 27.0.1. Each durable 262,144-byte backup and receipt was verified; both programming sessions and complete shared-SPI readbacks succeeded. The user confirmed both pictures after the required monitor DC power cycles, and passive header reads confirmed `0A.89.19.02` on both. |
+| Post-update display standby/wake | Both units passed two short user-assisted display-sleep/wake cycles. The user confirmed both pictures returned, and macOS reported both external displays online after each cycle, at their current 120 Hz modes. No Mac restart or persistent display-setting change was performed. Long standby, repeated overnight use, and other modes remain untested. |
+| VIA hub programming | Native access, complete reads, and offline planning/programming tests passed; a physical hub firmware update is not yet documented |
 | ES07D03 with scaler EF4018 | Build 17 completed the 4 MiB scaler read and exact installed-model proof. It then stopped before erase at a zero-filled shared-SPI ID response. No firmware was changed. |
 | VIA identification and complete reads | Build 18 request: three read-only `C1/9F` queries returned `EF301200` on a directly USB-C-connected ES07D03; legacy `C4/90` returned `EF11EF11`. The real VIA engine then identified 262,144 bytes, read the entire shared SPI twice with identical results, and validated the PD 19.02 plan against the installed factory header and PD CRC/layout. The probe prohibited flash write-enable/erase/program commands, restored all four setup registers, and checked their original values. |
 | Power-loss factory fallback | Not certified by these tests |
@@ -62,8 +64,8 @@ The later build 18 read/plan probe also exercised eight native vendor OUT config
 
 ## Outstanding work
 
-1. Validate complete shared-path VIA setup, programming, cleanup, and restart on compatible hardware; read-only native access alone is insufficient.
-2. Document hub and PD updates on compatible physical units, including backup/readback/restart outcomes.
+1. Extend PD programming and restart validation beyond the two observed ES07D03 units and test long-term sleep/wake stability beyond the two short observed cycles.
+2. Document physical hub firmware updates, including backup/readback/restart outcomes.
 3. Document scaler updates on each additional model/controller/flash profile.
 4. Establish original firmware evidence before adding D01/DCA or other targets.
 5. Investigate recovery behavior with model-specific evidence rather than simulator assumptions.

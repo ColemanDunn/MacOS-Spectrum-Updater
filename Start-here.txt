@@ -39,10 +39,13 @@ not automatically restore an entire USB chip or identify a unit by its USB port.
 Many monitors use a placeholder serial, so device-specific backup restore is then
 unavailable. Existing backups are preserved outside this release folder.
 
-The scaler route incorporates the earlier ES07D03 chip/sequence fixes tested on
-one monitor. Hub/PD routes passed offline simulation; physical macOS USB hub
-access and updates on other units have not yet been tested. This is not a claim
-of hardware certification or a fix for blackouts/wake behavior: firmware is stock.
+The scaler route incorporates the earlier reported ES07D03 chip/sequence fixes.
+Build 18 installed PD 19.02 on two ES07D03 units over direct USB-C on macOS
+27.0.1, with verified backups, full shared-SPI readback and normal boot after
+monitor power cycling. Both passed two short wake checks at their current
+120 Hz modes. Hub firmware programming, other model units and long standby
+remain unvalidated. These results are scoped observations, not certification.
+The installed firmware is stock.
 
 The app is locally signed, not Apple-notarized. If macOS cannot verify its
 publisher, try opening it, then use System Settings > Privacy & Security >
@@ -53,7 +56,7 @@ QHD firmware: https://www.reddit.com/r/doughcommunity/comments/15etlh9/firmware/
 Follow the published update guide at https://github.com/Golps/MacOS-Spectrum-Updater/blob/main/docs/UPDATE-GUIDE.md
 No monitor operation is performed merely by opening the app or reading this guide.
 
-UI revision — build 15
+App build 18
 The entire workflow fits on one page; only the diagnostics log scrolls.
 Connection polling updates the screen only when the connection changes.
 The flat step indicator uses a progress line and completion checks, without button backgrounds.

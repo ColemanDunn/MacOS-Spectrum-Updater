@@ -6,7 +6,7 @@
 
 | Model | Panel family | Finish | Accepted scaler releases | Physical validation |
 | --- | --- | --- | --- | --- |
-| ES07D03 | 27-inch IPS, 3840×2160, 144 Hz | Matte | V105, V106, V108, V108 Beta 3 | Reported successful scaler update on one unit |
+| ES07D03 | 27-inch IPS, 3840×2160, 144 Hz | Matte | V105, V106, V108, V108 Beta 3 | Prior reported scaler update; build 18 PD 19.02 programming/readback/boot verified over USB-C |
 | ES07DC9 | 27-inch IPS, 3840×2160, 144 Hz | Glossy | Glossy V101, shared V108 Beta 3 | Not yet documented |
 | ES07E30 | 27-inch IPS, 3840×2160, 144 Hz | Gorilla Glass | V108, shared V108 Beta 3 | Not yet documented |
 | ES07D02 | 27-inch IPS, 2560×1440, 280 Hz | Matte | QHD V101, QHD Beta 1 | Not yet documented |
@@ -19,8 +19,8 @@ Dough's [Spectrum One specification](https://files.bbystatic.com/sZx8dgseD2pOvZW
 
 | Component | Accepted payload | Required controller | Status |
 | --- | --- | --- | --- |
-| USB hub | 06A4 | VIA VL822Q7 | Implemented; offline tests passed; hardware update/access validation outstanding |
-| USB-C / PD | 0A.89.17.02, 0A.89.19.02 | VIA VL103, recognized shared VL822 layout | Implemented; offline tests passed; hardware update/access validation outstanding |
+| USB hub | 06A4 | VIA VL822Q7 | Native access and complete flash reads verified; hub firmware programming still needs physical validation |
+| USB-C / PD | 0A.89.17.02, 0A.89.19.02 | VIA VL103, recognized shared VL822 layout | Build 18: 17.02 → 19.02 installation, complete shared-SPI readback, and post-power-cycle boot verified on two ES07D03 units over direct USB-C; two short wake checks passed. Other models and long-term wake stability remain unvalidated. |
 
 The catalog associates these with the four IPS model profiles above. The backend additionally requires a directly paired compatible controller, a recognized installed scaler, supported SPI geometry, valid headers/checksums, and a consistent flash layout. Neither the menu selection nor a VIA vendor ID by itself authorizes a write.
 
@@ -58,7 +58,7 @@ Some recognized scaler images are shared across compatible models. Those establi
 
 macOS exposes the monitor's internal billboard as VID/PID `2109:8886`. For hub/PD, the engine requires a directly paired `2109:2822` USB2 hub ancestor and validates its VL822Q7 silicon. It does not pick an unrelated VIA hub just because it has a matching vendor ID or serial string.
 
-Normal IOKit access is used without driver seizure, a kernel extension, or a root helper. The macOS USB driver may deny access on a real unit; that remains an unvalidated hardware/software interaction and causes the operation to stop.
+Normal IOKit access is used without driver seizure, a kernel extension, or a root helper. Build 16 adds shared device-vendor access for a directly paired hub returning `kIOReturnExclusiveAccess`; build 18 completed PD installation through this path on an ES07D03 with macOS 27.0.1. Other open errors still stop the operation. This observation does not establish access across all macOS versions or hardware revisions.
 
 ## Requesting additional support
 

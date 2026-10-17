@@ -5,6 +5,7 @@
 - Fix USB shared-SPI JEDEC identification: `9F` uses the one-command-byte `C1` request with a four-byte USB reply. The previous `C8` request returned zeros on a physical VL822Q7.
 - Confirmed three read-only `C1/9F` queries returned `EF301200` over direct USB-C; the legacy `C4/90` query returned the matching `EF11` manufacturer/device pair. No firmware writes were sent during these probes.
 - Native full shared-SPI reads matched twice and PD 19.02 layout planning passed. Temporary setup registers were restored and read back; that probe prohibited flash write-enable/erase/program commands.
+- Two ES07D03 PD 17.02 → 19.02 installations over direct USB-C passed durable backup and full shared-SPI readback. Normal pictures and the 19.02 headers were confirmed after the required monitor DC power cycles. Both units passed two short display-sleep/wake checks at their current 120 Hz modes; long-term stability remains untested.
 - Add a measured-transaction regression and zero/FF-ID cleanup tests. Invalid ID responses now have a distinct explanation instead of being described as an unsupported chip.
 
 ## 1.0 — build 17

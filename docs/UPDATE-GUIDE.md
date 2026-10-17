@@ -2,7 +2,7 @@
 
 [← README](../README.md) · [Compatibility](COMPATIBILITY.md) · [Troubleshooting](TROUBLESHOOTING.md)
 
-This guide covers the **stock updater**, version 1.0, build 15. It does not describe installing custom firmware. The ES07D03 scaler route has a reported successful hardware update; hub/PD and the other model units still need physical validation.
+This guide covers the **stock updater**, version 1.0, build 18. It does not describe installing custom firmware. ES07D03 scaler has a prior reported hardware update, and PD 19.02 programming/readback/boot has been verified over direct USB-C. Hub firmware programming, other model units, and long-term sleep/wake stability still need physical validation; see [Validation](VALIDATION.md).
 
 ## Before you begin
 
